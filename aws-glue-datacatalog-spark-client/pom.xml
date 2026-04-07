@@ -11,6 +11,19 @@
     <name>AWSGlueDataCatalogSparkClient</name>
 
     <artifactId>aws-glue-datacatalog-spark-client</artifactId>
+    <!-- Force safe version of tomcat-embed-core to remediate:
+         CVE-2025-24813 (Partial PUT RCE) and Improper Privilege Management CVEs.
+         Transitively pulled in by hive-exec / hive-metastore (spark-hive 2.3.10). -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>9.0.99</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.hive</groupId>

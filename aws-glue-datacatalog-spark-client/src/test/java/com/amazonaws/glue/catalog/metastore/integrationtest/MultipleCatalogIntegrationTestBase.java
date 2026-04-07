@@ -19,28 +19,35 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Base class for integration test to check that multiple Glue catalogs can be accessed using single MetastoreClient.
+ * Base class for integration test to check that multiple Glue catalogs can be
+ * accessed using single MetastoreClient.
  * To be able to run such test you have to make the following set up:
- * 1. Retrieve credentials of AWS account (lets say account A) which will be used to authenticate your test.
- * 2. Set credentials and region of account A the following variables: AWS_SECRET_KEY, AWS_ACCESS_KEY, AWS_REGION.
- * 3. Set up permissions in another AWS account (lets say account B) that account A has access to account B.
- * 3.1 Log in to AWS Console under account B, choose AWS Glue service and go to Settings.
+ * 1. Retrieve credentials of AWS account (lets say account A) which will be
+ * used to authenticate your test.
+ * 2. Set credentials and region of account A the following variables:
+ * AWS_SECRET_KEY, AWS_ACCESS_KEY, AWS_REGION.
+ * 3. Set up permissions in another AWS account (lets say account B) that
+ * account A has access to account B.
+ * 3.1 Log in to AWS Console under account B, choose AWS Glue service and go to
+ * Settings.
  * 3.2 Set the following policy:
- {
- "Version" : "2012-10-17",
- "Statement" : [ {
- "Effect" : "Allow",
- "Principal" : {
- "AWS" : "arn:aws:iam::<account A>:root"
- },
- "Action" : "glue:*",
- "Resource" : "arn:aws:glue:us-east-1:<account B>:*"
- } ]
- }
+ * {
+ * "Version" : "2012-10-17",
+ * "Statement" : [ {
+ * "Effect" : "Allow",
+ * "Principal" : {
+ * "AWS" : "arn:aws:iam::<account A>:root"
+ * },
+ * "Action" : "glue:*",
+ * "Resource" : "arn:aws:glue:us-east-1:<account B>:*"
+ * } ]
+ * }
  * 4. Set account B id as a value of ANOTHER_GLUE_CATALOG_ID variable.
  *
- * If another account preparation is not an option for you then you can skip #3 and set account A as a value of
- * ANOTHER_GLUE_CATALOG_ID variable. In this case test will pass but you won't test a real multiple catalog access.
+ * If another account preparation is not an option for you then you can skip #3
+ * and set account A as a value of
+ * ANOTHER_GLUE_CATALOG_ID variable. In this case test will pass but you won't
+ * test a real multiple catalog access.
  */
 public class MultipleCatalogIntegrationTestBase {
     private static final String ANOTHER_GLUE_CATALOG_ID = "ANOTHER_GLUE_CATALOG_ID";
@@ -56,7 +63,6 @@ public class MultipleCatalogIntegrationTestBase {
         Warehouse wh = mock(Warehouse.class);
         Path tmpPath = new Path("/db");
         when(wh.getDefaultDatabasePath(anyString())).thenReturn(tmpPath);
-        when(wh.getDnsPath(any(Path.class))).thenReturn(tmpPath);
         when(wh.isDir(any(Path.class))).thenReturn(true);
 
         GlueClientFactory clientFactory = new AWSGlueClientFactory(conf);

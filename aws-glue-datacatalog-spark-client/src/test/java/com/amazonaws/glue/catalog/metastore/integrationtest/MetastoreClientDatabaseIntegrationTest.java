@@ -54,9 +54,8 @@ public class MetastoreClientDatabaseIntegrationTest {
     wh = mock(Warehouse.class);
     tmpPath = new Path("/db");
     when(wh.getDefaultDatabasePath(anyString())).thenReturn(tmpPath);
-    when(wh.getDnsPath(any(Path.class))).thenReturn(tmpPath);
     when(wh.isDir(any(Path.class))).thenReturn(true);
-    when(conf.get(HiveConf.ConfVars.USERS_IN_ADMIN_ROLE.varname,"")).thenReturn("");
+    when(conf.get(HiveConf.ConfVars.USERS_IN_ADMIN_ROLE.varname, "")).thenReturn("");
 
     glueClient = new GlueTestClientFactory().newClient();
     GlueClientFactory clientFactory = mock(GlueClientFactory.class);
@@ -74,12 +73,13 @@ public class MetastoreClientDatabaseIntegrationTest {
   public void clean() {
     try {
       glueClient.deleteDatabase(new DeleteDatabaseRequest().withName(hiveDB.getName()));
-      
+
       for (String db : additionalDbForCleanup) {
         glueClient.deleteDatabase(new DeleteDatabaseRequest().withName(db));
       }
     } catch (EntityNotFoundException e) {
-      //there will be no database to drop after drop database test, so swallow the exception
+      // there will be no database to drop after drop database test, so swallow the
+      // exception
     }
   }
 

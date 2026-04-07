@@ -69,20 +69,19 @@ public class MetastoreClientTableIntegrationTest {
     wh = mock(Warehouse.class);
     tmpPath = new Path("/db");
     when(wh.getDefaultDatabasePath(anyString())).thenReturn(tmpPath);
-    when(wh.getDnsPath(any(Path.class))).thenReturn(tmpPath);
     when(wh.isDir(any(Path.class))).thenReturn(true);
-    when(conf.get(HiveConf.ConfVars.USERS_IN_ADMIN_ROLE.varname,"")).thenReturn("");
+    when(conf.get(HiveConf.ConfVars.USERS_IN_ADMIN_ROLE.varname, "")).thenReturn("");
 
     glueClient = new GlueTestClientFactory().newClient();
     GlueClientFactory clientFactory = mock(GlueClientFactory.class);
     when(clientFactory.newClient()).thenReturn(glueClient);
 
     metastoreClient = new AWSCatalogMetastoreClient.Builder().withHiveConf(conf).withWarehouse(wh)
-            .withClientFactory(clientFactory).build();
+        .withClientFactory(clientFactory).build();
     catalogDB = getTestDatabase();
     hiveDB = new BaseCatalogToHiveConverter().convertDatabase(catalogDB);
     glueClient.createDatabase(new CreateDatabaseRequest()
-      .withDatabaseInput(GlueInputConverter.convertToDatabaseInput(catalogDB)));
+        .withDatabaseInput(GlueInputConverter.convertToDatabaseInput(catalogDB)));
   }
 
   @Before
@@ -100,7 +99,7 @@ public class MetastoreClientTableIntegrationTest {
       token = result.getNextToken();
       for (com.amazonaws.services.glue.model.Table table : result.getTableList()) {
         glueClient.deleteTable(new DeleteTableRequest().withDatabaseName(catalogDB.getName())
-                .withName(table.getName()));
+            .withName(table.getName()));
       }
     } while (token != null);
   }
@@ -115,13 +114,13 @@ public class MetastoreClientTableIntegrationTest {
     metastoreClient.createTable(hiveTable);
   }
 
-  @Test (expected = AlreadyExistsException.class)
+  @Test(expected = AlreadyExistsException.class)
   public void createDuplicateTable() throws TException {
     metastoreClient.createTable(hiveTable);
     metastoreClient.createTable(hiveTable);
   }
-  
-  @Test (expected = UnknownDBException.class)
+
+  @Test(expected = UnknownDBException.class)
   public void createInvalidTableWithUnknownDatabase() throws Exception {
     hiveTable.setDbName(invalidDatabase);
     metastoreClient.createTable(hiveTable);
@@ -129,8 +128,9 @@ public class MetastoreClientTableIntegrationTest {
 
   @Test
   public void alterTableValid() throws Exception {
-    //TODO: add test for alter Table cascade.
-    // if change is related with column and cascade is turned on, it will also change table's partition
+    // TODO: add test for alter Table cascade.
+    // if change is related with column and cascade is turned on, it will also
+    // change table's partition
     String newType = "VIRTUAL_VIEW";
     Table newHiveTable = catalogToHiveConverter.convertTable(getTestTable(), hiveTable.getDbName());
 
@@ -154,7 +154,7 @@ public class MetastoreClientTableIntegrationTest {
     assertEquals(newType, result.getTableType());
   }
 
-  @Test (expected = UnknownDBException.class)
+  @Test(expected = UnknownDBException.class)
   public void alterTableInvalidDB() throws Exception {
     String newType = "newType";
     Table newHiveTable = catalogToHiveConverter.convertTable(getTestTable(), hiveTable.getDbName());
@@ -164,7 +164,7 @@ public class MetastoreClientTableIntegrationTest {
     metastoreClient.alter_table(invalidDatabase, hiveTable.getTableName(), newHiveTable);
   }
 
-  @Test (expected = UnknownTableException.class)
+  @Test(expected = UnknownTableException.class)
   public void alterTableInvalidUnknownTable() throws Exception {
     metastoreClient.alter_table(hiveDB.getName(), hiveTable.getTableName(), hiveTable);
   }
@@ -179,14 +179,14 @@ public class MetastoreClientTableIntegrationTest {
     assertFalse(notExists);
   }
 
-  @Test (expected =  UnknownDBException.class)
+  @Test(expected = UnknownDBException.class)
   public void checkTableExistsInvalid() throws TException {
     metastoreClient.createTable(hiveTable);
     metastoreClient.tableExists(invalidDatabase, hiveTable.getTableName());
   }
 
   @Test
-  public void getFieldsValid() throws Exception{
+  public void getFieldsValid() throws Exception {
     int expectedNum = 1;
     metastoreClient.createTable(hiveTable);
     List<FieldSchema> fieldSchemaList = metastoreClient.getFields(hiveDB.getName(), hiveTable.getTableName());
@@ -194,20 +194,20 @@ public class MetastoreClientTableIntegrationTest {
     assertEquals(hiveTable.getSd().getCols().get(0), fieldSchemaList.get(0));
   }
 
-  @Test (expected = NoSuchObjectException.class)
-  public void getFieldInValidWithUnknownDb() throws Exception{
+  @Test(expected = NoSuchObjectException.class)
+  public void getFieldInValidWithUnknownDb() throws Exception {
     metastoreClient.createTable(hiveTable);
     metastoreClient.getSchema(invalidDatabase, hiveTable.getTableName());
   }
 
-  @Test (expected = NoSuchObjectException.class)
-  public void getFieldInValidWithUnknownTable() throws Exception{
+  @Test(expected = NoSuchObjectException.class)
+  public void getFieldInValidWithUnknownTable() throws Exception {
     metastoreClient.createTable(hiveTable);
     metastoreClient.getSchema(hiveDB.getName(), invalidTable);
   }
 
   @Test
-  public void getSchemaValid() throws Exception{
+  public void getSchemaValid() throws Exception {
     int expectedNum = 2;
     metastoreClient.createTable(hiveTable);
     List<FieldSchema> schemaList = metastoreClient.getSchema(hiveDB.getName(), hiveTable.getTableName());
@@ -216,14 +216,13 @@ public class MetastoreClientTableIntegrationTest {
     assertTrue(schemaList.containsAll(hiveTable.getSd().getCols()));
   }
 
-  @Test (expected = NoSuchObjectException.class)
+  @Test(expected = NoSuchObjectException.class)
   public void getSchemaInvalidWithUnknownDb() throws Exception {
     metastoreClient.createTable(hiveTable);
     metastoreClient.getSchema(invalidDatabase, hiveTable.getTableName());
   }
 
-
-  @Test (expected = NoSuchObjectException.class)
+  @Test(expected = NoSuchObjectException.class)
   public void getSchemaInvalidWithUnknownTable() throws Exception {
     metastoreClient.createTable(hiveTable);
     metastoreClient.getSchema(hiveDB.getName(), invalidTable);
@@ -232,24 +231,25 @@ public class MetastoreClientTableIntegrationTest {
   @Test
   public void getTableValid() throws Exception {
     metastoreClient.createTable(hiveTable);
-    org.apache.hadoop.hive.metastore.api.Table result = metastoreClient.getTable(hiveDB.getName(), hiveTable.getTableName());
+    org.apache.hadoop.hive.metastore.api.Table result = metastoreClient.getTable(hiveDB.getName(),
+        hiveTable.getTableName());
     assertTableEqual(result, hiveTable);
   }
 
-  @Test (expected = NoSuchObjectException.class)
+  @Test(expected = NoSuchObjectException.class)
   public void getTableInvalidWithUnknownTable() throws Exception {
     metastoreClient.createTable(hiveTable);
     metastoreClient.getTable(hiveDB.getName(), invalidTable);
   }
 
-  @Test (expected = NoSuchObjectException.class)
+  @Test(expected = NoSuchObjectException.class)
   public void getTabInvalidWithUnknownDb() throws Exception {
     metastoreClient.createTable(hiveTable);
     metastoreClient.getTable(invalidDatabase, hiveTable.getTableName());
   }
 
   @Test
-  public void getTableObjectsByNameValid() throws TException{
+  public void getTableObjectsByNameValid() throws TException {
     Table table1 = catalogToHiveConverter.convertTable(getTestTable(), hiveDB.getName());
     List<String> tableNameList = Lists.newArrayList();
     tableNameList.add(hiveTable.getTableName());
@@ -257,8 +257,8 @@ public class MetastoreClientTableIntegrationTest {
     metastoreClient.createTable(table1);
     metastoreClient.createTable(hiveTable);
 
-    List<org.apache.hadoop.hive.metastore.api.Table> tableList = 
-        metastoreClient.getTableObjectsByName(hiveDB.getName(), tableNameList);
+    List<org.apache.hadoop.hive.metastore.api.Table> tableList = metastoreClient.getTableObjectsByName(hiveDB.getName(),
+        tableNameList);
 
     assertEquals(tableNameList.size(), tableList.size());
 
@@ -267,7 +267,7 @@ public class MetastoreClientTableIntegrationTest {
     }
   }
 
-  @Test (expected = NoSuchObjectException.class)
+  @Test(expected = NoSuchObjectException.class)
   public void getTableObjectsByNameInvalidWithUnknownDb() throws TException {
     Table table1 = catalogToHiveConverter.convertTable(getTestTable(), hiveDB.getName());
     List<String> tableNameList = Lists.newArrayList();
@@ -290,15 +290,15 @@ public class MetastoreClientTableIntegrationTest {
     assertFalse(metastoreClient.tableExists(hiveDB.getName(), hiveTable.getTableName()));
   }
 
-  @Test (expected = UnknownTableException.class)
+  @Test(expected = UnknownTableException.class)
   public void dropTableInvalidWithUnKnownTable() throws Exception {
     metastoreClient.dropTable(hiveDB.getName(), invalidTable, false, false);
   }
 
-  @Test (expected = UnknownDBException.class)
+  @Test(expected = UnknownDBException.class)
   public void dropTableInvalidWithUnknownDb() throws Exception {
     metastoreClient.createTable(hiveTable);
-    metastoreClient.dropTable(invalidDatabase, hiveTable.getTableName(),false, false);
+    metastoreClient.dropTable(invalidDatabase, hiveTable.getTableName(), false, false);
   }
 
   @Test
@@ -314,7 +314,7 @@ public class MetastoreClientTableIntegrationTest {
     assertTrue(result.contains(hiveTable.getTableName()));
   }
 
-  @Test (expected = NoSuchObjectException.class)
+  @Test(expected = NoSuchObjectException.class)
   public void getTablesInvalidWithUnknownDb() throws Exception {
     metastoreClient.createTable(hiveTable);
     metastoreClient.getTables(invalidDatabase, ".*");
@@ -333,7 +333,7 @@ public class MetastoreClientTableIntegrationTest {
     assertTrue(result.contains(hiveTable.getTableName()));
   }
 
-  @Test (expected = NoSuchObjectException.class)
+  @Test(expected = NoSuchObjectException.class)
   public void getAllTablesInvalidWithUnknownDb() throws Exception {
     metastoreClient.createTable(hiveTable);
     metastoreClient.getAllTables(invalidDatabase);

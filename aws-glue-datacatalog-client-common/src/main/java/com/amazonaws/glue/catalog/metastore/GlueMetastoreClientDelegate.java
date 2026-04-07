@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.common.StatsSetupConst;
 import org.apache.hadoop.hive.common.ValidTxnList;
@@ -107,7 +108,7 @@ import static com.amazonaws.glue.catalog.util.MetastoreClientUtils.validateGlueT
 import static com.amazonaws.glue.catalog.util.MetastoreClientUtils.validateTableObject;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.hadoop.hive.metastore.HiveMetaStore.PUBLIC;
+
 import static org.apache.hadoop.hive.metastore.TableType.EXTERNAL_TABLE;
 import static org.apache.hadoop.hive.metastore.TableType.MANAGED_TABLE;
 
@@ -120,6 +121,7 @@ public class GlueMetastoreClientDelegate {
 
     private static final Logger logger = Logger.getLogger(GlueMetastoreClientDelegate.class);
 
+    private static final String PUBLIC = "public";
     private static final List<Role> implicitRoles = Lists.newArrayList(new Role(PUBLIC, 0, PUBLIC));
     public static final int MILLISECOND_TO_SECOND_FACTOR = 1000;
     public static final Long NO_MAX = -1L;
@@ -138,6 +140,19 @@ public class GlueMetastoreClientDelegate {
     private final Configuration conf;
     private final Warehouse wh;
     private final AwsGlueHiveShims hiveShims = ShimsLoader.getHiveShims();
+
+    /**
+     * Portable replacement for the removed Warehouse.getDnsPath() instance method.
+     */
+    private Path getDnsPath(Path path) throws MetaException {
+        try {
+            FileSystem fs = path.getFileSystem(conf);
+            return new Path(fs.getUri().getScheme(), fs.getUri().getAuthority(), path.toUri().getPath());
+        } catch (IOException e) {
+            throw new MetaException("Unable to resolve path: " + e.getMessage());
+        }
+    }
+
     private final CatalogToHiveConverter catalogToHiveConverter;
     private final String catalogId;
 
@@ -166,7 +181,7 @@ public class GlueMetastoreClientDelegate {
         if (StringUtils.isEmpty(database.getLocationUri())) {
             database.setLocationUri(wh.getDefaultDatabasePath(database.getName()).toString());
         } else {
-            database.setLocationUri(wh.getDnsPath(new Path(database.getLocationUri())).toString());
+            database.setLocationUri(getDnsPath(new Path(database.getLocationUri())).toString());
         }
         Path dbPath = new Path(database.getLocationUri());
         boolean madeDir = makeDirs(wh, dbPath);
@@ -586,7 +601,7 @@ public class GlueMetastoreClientDelegate {
             org.apache.hadoop.hive.metastore.api.Database db = getDatabase(tbl.getDbName());
             tbl.getSd().setLocation(hiveShims.getDefaultTablePath(db, tbl.getTableName(), wh).toString());
         } else {
-            tbl.getSd().setLocation(wh.getDnsPath(new Path(tbl.getSd().getLocation())).toString());
+            tbl.getSd().setLocation(getDnsPath(new Path(tbl.getSd().getLocation())).toString());
         }
 
         Path tblPath = new Path(tbl.getSd().getLocation());
@@ -765,7 +780,7 @@ public class GlueMetastoreClientDelegate {
             if (tbl.getSd().getLocation() == null) {
                 throw new MetaException("Cannot specify location for a view partition");
             }
-            partLocation = wh.getDnsPath(new Path(partLocationStr));
+            partLocation = getDnsPath(new Path(partLocationStr));
         }
         return partLocation;
     }
